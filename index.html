@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#4f8cff">
+  <title>记单词</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ========== 首页 ========== -->
+  <section id="screen-home" class="screen active">
+    <header class="topbar">
+      <h1>📖 记单词</h1>
+    </header>
+    <div class="home-body">
+      <div class="home-greeting">
+        <p class="big">今天要加油哦 👋</p>
+        <p class="sub">坚持每天打卡，单词越记越牢</p>
+      </div>
+
+      <div class="home-stats">
+        <div class="stat-card">
+          <div class="stat-num" id="home-review">0</div>
+          <div class="stat-label">待复习</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="home-new">0</div>
+          <div class="stat-label">新词</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="home-mastered">0</div>
+          <div class="stat-label">已掌握</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num"><span id="home-learned">0</span>/<span id="home-total">0</span></div>
+          <div class="stat-label">已学/总数</div>
+        </div>
+      </div>
+
+      <div class="unit-picker">
+        <div class="unit-picker-title">📚 选择单元</div>
+        <div class="unit-picker-btns" id="unit-picker-btns"></div>
+      </div>
+
+      <div class="home-modes">
+        <button id="home-browse" class="mode-btn">
+          <span class="mode-icon">📖</span>
+          <span class="mode-name">记单词</span>
+          <span class="mode-desc">纯滑动浏览</span>
+        </button>
+        <button id="home-start" class="mode-btn primary">
+          <span class="mode-icon">✍️</span>
+          <span class="mode-name">默写</span>
+          <span class="mode-desc">学习+默写检验</span>
+        </button>
+        <button id="home-dictation" class="mode-btn accent">
+          <span class="mode-icon">🔥</span>
+          <span class="mode-name">纯默写</span>
+          <span class="mode-desc">快速刷词，滑动即写</span>
+        </button>
+      </div>
+      <p class="home-tip">💡 提示：上下滑动切换卡片，像刷视频一样</p>
+    </div>
+  </section>
+
+  <!-- ========== 学习页 ========== -->
+  <section id="screen-study" class="screen">
+    <div class="study-header">
+      <span class="progress-text" id="study-progress">1 / 10</span>
+      <span class="mode-tag" id="study-mode">新词</span>
+    </div>
+
+    <div id="study" class="card-stage">
+      <div id="card-slider" class="card-slider">
+      <!-- 学习面 -->
+      <div id="card-learn" class="card-face active">
+        <div class="card-emoji" id="card-emoji">🍎</div>
+        <div class="card-word" id="card-word">word</div>
+        <div class="card-phonetic" id="card-phonetic">/wɜːd/</div>
+        <div class="card-meaning" id="card-pos-meaning">n. 释义</div>
+
+        <div class="card-block">
+          <div class="block-title">🌱 词根</div>
+          <div class="block-text" id="card-root"></div>
+        </div>
+        <div class="card-block">
+          <div class="block-title">💡 联想</div>
+          <div class="block-text" id="card-mnemonic"></div>
+        </div>
+        <div class="card-block">
+          <div class="block-title">📖 例句</div>
+          <div class="block-text example-en" id="card-example-en"></div>
+          <div class="block-text example-zh" id="card-example-zh"></div>
+        </div>
+
+        <div class="stage-tag" id="card-stage"></div>
+        <button id="card-write-btn" class="ghost-btn">开始默写 ↓</button>
+      </div>
+
+      <!-- 默写面 -->
+      <div id="card-write" class="card-face">
+        <div class="write-emoji">✍️</div>
+        <div class="write-meaning" id="write-meaning">请拼写这个单词</div>
+        <input id="write-input" class="write-input" type="text" placeholder="在这里输入英文..." autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+        <div class="write-hint" id="write-hint"></div>
+        <button id="write-submit" class="primary-btn">提交</button>
+      </div>
+
+      <!-- 结果面 -->
+      <div id="card-result" class="card-face">
+        <div class="result-title" id="result-title">答对了！🎉</div>
+        <div class="result-answer" id="result-answer">word</div>
+        <div class="result-meaning" id="result-meaning">n. 释义</div>
+        <div class="result-stage" id="result-stage"></div>
+        <button id="card-next-btn" class="primary-btn">下一个</button>
+      </div>
+      </div><!-- /card-slider -->
+    </div>
+
+    <div class="slide-hint" id="card-slide-hint">上滑开始默写 ↑</div>
+  </section>
+
+  <!-- ========== 完成页 ========== -->
+  <section id="screen-done" class="screen">
+    <div class="done-body">
+      <div class="done-emoji" id="done-emoji">🎉</div>
+      <h2 id="done-title">今天的任务完成啦！</h2>
+      <p class="done-sub" id="done-sub">艾宾浩斯曲线告诉你：明天记得回来复习哦</p>
+      <div id="done-dictation-result" style="display:none;margin:12px 0;">
+        <div class="home-stats">
+          <div class="stat-card">
+            <div class="stat-num" id="done-dict-correct">0</div>
+            <div class="stat-label">答对</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num" id="done-dict-wrong">0</div>
+            <div class="stat-label">答错</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num" id="done-dict-total">0</div>
+            <div class="stat-label">总题数</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num" id="done-dict-accuracy">0%</div>
+            <div class="stat-label">准确率</div>
+          </div>
+        </div>
+        <div id="done-dict-detail" style="margin:12px 0;max-height:300px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:12px;background:#fff;"></div>
+        <button id="done-redo-wrong" class="primary-btn" style="display:none;margin-top:12px;background:linear-gradient(135deg,#ff6b6b,#ff4757);border:none;box-shadow:0 8px 24px rgba(255,71,87,0.3);">待更正 <span id="done-wrong-count">0</span> 个 🔄</button>
+      </div>
+      <div class="home-stats">
+        <div class="stat-card">
+          <div class="stat-num" id="done-mastered">0</div>
+          <div class="stat-label">已掌握</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num"><span id="done-learned">0</span>/<span id="done-total">0</span></div>
+          <div class="stat-label">已学/总数</div>
+        </div>
+      </div>
+      <button id="done-back" class="primary-btn">回到首页</button>
+    </div>
+  </section>
+
+  <!-- ========== 统计页 ========== -->
+  <section id="screen-stats" class="screen">
+    <header class="topbar">
+      <h1>📊 学习统计</h1>
+    </header>
+    <div class="stats-body">
+      <div class="progress-section">
+        <div class="progress-label">
+          <span>总体进度</span>
+          <span id="stats-progress-text">0%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-bar" id="stats-progress-bar"></div>
+        </div>
+      </div>
+
+      <div class="home-stats">
+        <div class="stat-card">
+          <div class="stat-num" id="stats-learned">0</div>
+          <div class="stat-label">已学习</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stats-mastered">0</div>
+          <div class="stat-label">已掌握</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stats-accuracy">0%</div>
+          <div class="stat-label">默写正确率</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stats-answers">0</div>
+          <div class="stat-label">累计默写</div>
+        </div>
+      </div>
+      <p class="home-tip">📚 词库总量：<span id="stats-total">0</span> 个单词</p>
+    </div>
+  </section>
+
+  <!-- ========== 设置页 ========== -->
+  <section id="screen-settings" class="screen">
+    <header class="topbar">
+      <h1>⚙️ 设置</h1>
+    </header>
+    <div class="settings-body">
+      <div class="setting-row">
+        <label for="setting-daily-new">每天新词数量</label>
+        <input id="setting-daily-new" type="number" min="1" max="100" value="10">
+      </div>
+
+      <div class="setting-section">
+        <h3>数据备份</h3>
+        <p class="setting-tip">导出进度文件，换设备或清缓存前备份。</p>
+        <button id="btn-export" class="ghost-btn">📤 导出进度</button>
+        <button id="btn-import" class="ghost-btn">📥 导入进度</button>
+        <input id="import-file" type="file" accept="application/json" style="display:none">
+      </div>
+
+      <div class="setting-section danger">
+        <h3>危险操作</h3>
+        <p class="setting-tip">清空全部学习进度，重新开始。</p>
+        <button id="btn-reset" class="danger-btn">🗑️ 清空进度</button>
+      </div>
+
+      <p class="home-tip">版本：MVP v2 · 纯前端 · 数据存本地</p>
+    </div>
+  </section>
+
+  <!-- ========== 底部导航 ========== -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-screen="home"><span class="nav-icon">🏠</span><span>首页</span></button>
+    <button class="nav-btn" data-screen="stats"><span class="nav-icon">📊</span><span>统计</span></button>
+    <button class="nav-btn" data-screen="settings"><span class="nav-icon">⚙️</span><span>设置</span></button>
+  </nav>
+
+  <script src="js/dict.js?v=16"></script>
+  <script src="js/store.js?v=16"></script>
+  <script src="js/swipe.js?v=16"></script>
+  <script src="js/app.js?v=16"></script>
+</body>
+</html>
