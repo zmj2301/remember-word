@@ -729,19 +729,13 @@
       $("#write-hint").textContent = "请先输入拼写～";
       return;
     }
+
+    // 判分
+    const correct = word.word === input || (inputNorm && inputNorm === answerNorm);
+    let progress = Store.getProgress(word.id);
     if (!progress) progress = createNewProgress();
     progress = recordAnswer(progress, correct ? "correct" : "incomplete");
     Store.setProgress(word.id, progress);
-
-    if (appMode === "dictation") {
-      // 纯默写模式：不展示结果面，直接进入下一个词
-      if (queueIndex >= studyQueue.length - 1) {
-        finishStudy();
-      } else {
-        commitToNextWord();
-      }
-      return;
-    }
 
     cardPhase = "result";
     showCardFace("card-result", correct ? "correct" : "wrong");
