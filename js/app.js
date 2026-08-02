@@ -45,8 +45,23 @@
       if (onEnd) onEnd();
     };
   }
+  /** 朗读例句（sentence_{wordId}.mp3） */
+  function speakSentence(wordId, onEnd) {
+    if (!wordId) return;
+    var audio = new Audio("audio/sentence_" + wordId + ".mp3");
+    audio.playbackRate = _playbackRate;
+    audio.play();
+    // 例句按钮动画反馈
+    var btn = $("#example-play-btn");
+    if (btn) { btn.classList.add("playing"); }
+    audio.onended = function () {
+      if (btn) { btn.classList.remove("playing"); }
+      if (onEnd) onEnd();
+    };
+  }
   // 暴露到全局，供临时卡片的 onclick 使用
   window.speak = speak;
+  window.speakSentence = speakSentence;
   window.setSpeed = setSpeed;
 
   function setSpeed(rate) {
@@ -361,10 +376,10 @@
       } else {
         renderCard();
       }
-      // 记单词/自由刷题模式：滑动后自动播放
+      // 记单词/自由刷题模式：滑动后自动播放单词 + 例句
       if (appMode === "browse" || appMode === "free") {
         var autoWord = studyQueue[queueIndex].word;
-        setTimeout(function() { speak(autoWord.id); }, 200);
+        setTimeout(function() { speak(autoWord.id, function() { speakSentence(autoWord.id); }); }, 200);
       }
       if (_animTargetTempId) {
         var el = document.getElementById(_animTargetTempId);
@@ -395,10 +410,10 @@
       } else {
         renderCard();
       }
-      // 记单词/自由刷题模式：滑动后自动播放
+      // 记单词/自由刷题模式：滑动后自动播放单词 + 例句
       if (appMode === "browse" || appMode === "free") {
         var autoWord = studyQueue[queueIndex].word;
-        setTimeout(function() { speak(autoWord.id); }, 200);
+        setTimeout(function() { speak(autoWord.id, function() { speakSentence(autoWord.id); }); }, 200);
       }
       if (_animTargetTempId) {
         var el = document.getElementById(_animTargetTempId);
@@ -620,6 +635,10 @@
     queueIndex = 0;
     showScreen("study");
     renderCard();
+    // 记单词模式：首张卡片自动播放单词 + 例句
+    if (appMode === "browse") {
+      setTimeout(function() { speak(studyQueue[0].word.id, function() { speakSentence(studyQueue[0].word.id); }); }, 200);
+    }
     // 默写模式：先显示学习面，上滑再进入默写
     // 纯默写模式：直接进入默写面
     if (appMode === "dictation") {
@@ -706,6 +725,10 @@
     queueIndex = 0;
     showScreen("study");
     renderCard();
+    // 自由刷题记单词模式：首张卡片自动播放单词 + 例句
+    if (appMode === "browse") {
+      setTimeout(function() { speak(studyQueue[0].word.id, function() { speakSentence(studyQueue[0].word.id); }); }, 200);
+    }
     if (appMode === "dictation") {
       enterWritePhase();
     }
@@ -776,7 +799,7 @@
     $("#card-pos-meaning").textContent = (word.pos ? word.pos + " " : "") + word.meaning;
     setBlock("card-root", word.root);
     setBlock("card-mnemonic", word.mnemonic);
-    $("#card-example-en").textContent = word.example || "";
+    $("#card-example-en").innerHTML = (word.example || "") + (word.example ? ' <span class="example-play-btn" id="example-play-btn" onclick="speakSentence(\'' + word.id + '\')">🔊</span>' : '');
     $("#card-example-zh").textContent = word.exampleTrans || "";
     var exampleBlock = $("#card-example-en").closest(".card-block");
     if (exampleBlock) exampleBlock.style.display = (word.example || word.exampleTrans) ? "" : "none";
