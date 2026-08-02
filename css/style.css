@@ -176,6 +176,16 @@ input { -webkit-user-select: text; user-select: text; }
 }
 .mode-btn.free-btn .mode-name { color: #1a1a2e; }
 .mode-btn.free-btn .mode-desc { color: #666; }
+.home-skipped {
+  font-size: 13px;
+  color: #ff9800;
+  background: #fff8e1;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-top: 10px;
+  text-align: center;
+  display: none;
+}
 .mode-btn {
   border: 1.5px solid #4f8cff;
   border-radius: 16px;

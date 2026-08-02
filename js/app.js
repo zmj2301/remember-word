@@ -465,6 +465,7 @@
   function buildTodayQueue() {
     const allProgress = Store.getAllProgress();
     const settings = Store.getSettings();
+    const dailyLimit = settings.dailyNewLimit || 10;
     const reviewList = [];
     const newList = [];
 
@@ -478,11 +479,21 @@
       }
     });
 
-    const limitedNew = newList.slice(0, settings.dailyNewLimit);
-    const queue = reviewList.map((w) => ({ word: w, mode: "review" }))
+    // 每日任务：优先安排待复习，用完额度再加新词
+    // 新词和复习词各自上限 dailyLimit，超出部分自动留到明天
+    const limitedReview = reviewList.slice(0, dailyLimit);
+    const limitedNew = newList.slice(0, dailyLimit);
+    const queue = limitedReview.map((w) => ({ word: w, mode: "review" }))
       .concat(limitedNew.map((w) => ({ word: w, mode: "new" })));
 
-    return { queue, reviewCount: reviewList.length, newCount: limitedNew.length };
+    return {
+      queue,
+      reviewCount: reviewList.length,
+      reviewShown: limitedReview.length,
+      newCount: limitedNew.length,
+      skippedReview: reviewList.length - limitedReview.length,
+      skippedNew: newList.length - limitedNew.length
+    };
   }
 
   function unitWordCount(unit) {
@@ -546,7 +557,7 @@
 
   function renderHome() {
     renderUnitPicker();
-    const { queue, reviewCount, newCount } = buildTodayQueue();
+    const { queue, reviewCount, reviewShown, newCount, skippedReview, skippedNew } = buildTodayQueue();
     const sel = Store.getSettings().selectedUnit || "all";
     const allProgress = Store.getAllProgress();
     // 只统计当前选中的单元
@@ -556,11 +567,26 @@
     }).length;
     const masteredCount = Object.values(allProgress).filter(isMastered).length;
 
-    $("#home-review").textContent = reviewCount;
+    // 显示实际会进入今日任务的词数（已限制）
+    $("#home-review").textContent = reviewShown;
     $("#home-new").textContent = newCount;
     $("#home-learned").textContent = learnedCount;
     $("#home-mastered").textContent = masteredCount;
     $("#home-total").textContent = unitWordCount(sel);
+
+    // 如果有限制被跳过，显示提示
+    const skippedHint = $("#home-skipped-hint");
+    if (skippedHint) {
+      const hints = [];
+      if (skippedReview > 0) hints.push(skippedReview + " 个待复习留到明天");
+      if (skippedNew > 0) hints.push(skippedNew + " 个新词留到明天");
+      if (hints.length > 0) {
+        skippedHint.style.display = "";
+        skippedHint.textContent = "⏳ " + hints.join("，");
+      } else {
+        skippedHint.style.display = "none";
+      }
+    }
 
     const browseBtn = $("#home-browse");
     const writeBtn = $("#home-start");
