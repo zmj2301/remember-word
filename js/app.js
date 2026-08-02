@@ -31,18 +31,31 @@
   }
 
   // ===================== 语音朗读 =====================
-  function speak(wordId) {
+  var _playbackRate = 1.5; // 默认 1.5 倍速
+
+  function speak(wordId, onEnd) {
     var audio = new Audio("audio/" + wordId + ".mp3");
+    audio.playbackRate = _playbackRate;
     audio.play();
     // 按钮动画反馈
     var btn = $("#play-btn");
     if (btn) { btn.classList.add("playing"); }
     audio.onended = function () {
       if (btn) { btn.classList.remove("playing"); }
+      if (onEnd) onEnd();
     };
   }
   // 暴露到全局，供临时卡片的 onclick 使用
   window.speak = speak;
+  window.setSpeed = setSpeed;
+
+  function setSpeed(rate) {
+    _playbackRate = rate;
+    var btn1x = $("#speed-1x");
+    var btn15x = $("#speed-1-5x");
+    if (btn1x) btn1x.classList.toggle("active", rate === 1);
+    if (btn15x) btn15x.classList.toggle("active", rate === 1.5);
+  }
 
   function createNewProgress() {
     const today = todayStr();
@@ -285,7 +298,7 @@
     var html = '';
     if (word.emoji) html += '<div class="card-emoji">' + word.emoji + '</div>';
     else html += '<div class="card-emoji"></div>';
-    html += '<div class="card-word-row"><div class="card-word">' + (word.word || '') + '</div><span class="play-btn" onclick="speak(\'' + word.id + '\')">🔊</span></div>';
+    html += '<div class="card-word-row"><div class="card-word">' + (word.word || '') + '</div><span class="play-btn" onclick="speak(\'' + word.id + '\')">🔊</span><span class="speed-btn' + (_playbackRate === 1 ? ' active' : '') + '" onclick="window.setSpeed(1)">1x</span><span class="speed-btn' + (_playbackRate === 1.5 ? ' active' : '') + '" onclick="window.setSpeed(1.5)">1.5x</span></div>';
     html += '<div class="card-phonetic">' + (word.phonetic || '') + '</div>';
     html += '<div class="card-meaning">' + (word.pos ? word.pos + ' ' : '') + (word.meaning || '') + '</div>';
     if (word.root) {
@@ -348,6 +361,11 @@
       } else {
         renderCard();
       }
+      // 记单词模式：滑动后自动播放
+      if (appMode === "browse") {
+        var autoWord = studyQueue[queueIndex].word;
+        setTimeout(function() { speak(autoWord.id); }, 200);
+      }
       if (_animTargetTempId) {
         var el = document.getElementById(_animTargetTempId);
         if (el) el.remove();
@@ -376,6 +394,11 @@
         renderPureDictation();
       } else {
         renderCard();
+      }
+      // 记单词模式：滑动后自动播放
+      if (appMode === "browse") {
+        var autoWord = studyQueue[queueIndex].word;
+        setTimeout(function() { speak(autoWord.id); }, 200);
       }
       if (_animTargetTempId) {
         var el = document.getElementById(_animTargetTempId);
