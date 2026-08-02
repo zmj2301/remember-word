@@ -641,29 +641,38 @@
   }
 
   function renderFreePage() {
-    // 渲染单元选择器（与首页共用样式，独立容器）
     var container = $("#free-unit-btns");
-    if (!container) return;
-    var settings = Store.getSettings();
-    var selectedUnit = settings.selectedUnit || "all";
+    var freeInfo = $("#free-unit-info");
+    var selText = $("#free-selected-text");
+    // 元素不存在时不应抛出（可能因脚本加载顺序/缓存问题）
+    if (!container || !freeInfo || !selText) {
+      console.warn("renderFreePage: 容器缺失", {
+        container: !!container, freeInfo: !!freeInfo, selText: !!selText,
+        DICTlen: (window.DICTIONARY ? window.DICTIONARY.length : undefined)
+      });
+      return;
+    }
     var allProgress = Store.getAllProgress();
     var html = '';
 
-    // "全部"按钮
-    var allCount = DICT.length;
-    var allLearned = Object.keys(allProgress).length;
-    var cls = _freeUnit === "all" ? "active" : "";
-    html += '<button class="unit-btn ' + cls + '" data-unit="all">全部</button>';
+    // 记录已渲染的单元（用于去重）
+    var rendered = { all: true };
 
+    // "全部"按钮
+    var cls = _freeUnit === "all" ? " active" : "";
+    html += '<button class="unit-btn' + cls + '" data-unit="all">全部</button>';
+
+    // 收集单元（保持出现顺序）
+    var units = [];
     DICT.forEach(function(w) {
-      var unit = w.unit;
-      if (!unit) return;
-      if (unit in html) return; // 去重
+      if (!rendered[w.unit]) { rendered[w.unit] = true; units.push(w.unit); }
+    });
+    units.forEach(function(unit) {
       var unitWords = DICT.filter(function(x) { return x.unit === unit; });
       var unitLearned = unitWords.filter(function(x) { return allProgress[x.id]; }).length;
-      var unitCls = _freeUnit === unit ? "active" : "";
+      var unitCls = _freeUnit === unit ? " active" : "";
       var text = unit + ' · ' + unitLearned + '/' + unitWords.length;
-      html += '<button class="unit-btn ' + unitCls + '" data-unit="' + unit + '">' + text + '</button>';
+      html += '<button class="unit-btn' + unitCls + '" data-unit="' + unit + '">' + text + '</button>';
     });
     container.innerHTML = html;
 
@@ -677,12 +686,10 @@
 
     // 更新状态文字
     var freeCount = _freeUnit === "all" ? DICT.length : DICT.filter(function(w) { return w.unit === _freeUnit; }).length;
-    var freeInfo = $("#free-unit-info");
-    if (freeInfo) freeInfo.textContent = _freeUnit === "all" ? "全部单元共 " + freeCount + " 个单词" : _freeUnit + " 共 " + freeCount + " 个单词";
-    var selText = $("#free-selected-text");
-    if (selText) selText.textContent = _freeUnit === "all" ? "全部" : _freeUnit;
+    freeInfo.textContent = _freeUnit === "all" ? "全部单元共 " + freeCount + " 个单词" : _freeUnit + " 共 " + freeCount + " 个单词";
+    selText.textContent = _freeUnit === "all" ? "全部" : _freeUnit;
 
-    // 启用模式按钮
+    // 始终启用模式按钮（自由刷题不依赖队列非空）
     var browseBtn = $("#free-browse");
     var writeBtn = $("#free-write");
     var dictBtn = $("#free-dictation");

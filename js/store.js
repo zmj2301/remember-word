@@ -79,9 +79,12 @@ const Store = (() => {
     if (data.settings) saveSettings(data.settings);
   }
 
-  /** 清空全部进度（慎用，重置学习） */
+  /** 清空全部进度（慎用，重置学习）——清除所有学习相关数据 */
   function resetAll() {
     localStorage.removeItem(PROGRESS_KEY);
+    localStorage.removeItem(DICTATION_KEY);
+    localStorage.removeItem(STUDY_DAYS_KEY);
+    // 不删除 SETTINGS_KEY：保留用户设置的每日新词数量等偏好
   }
 
   /** 记录今天学习了（去重） */
