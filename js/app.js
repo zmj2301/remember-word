@@ -31,7 +31,7 @@
   }
 
   // ===================== 语音朗读 =====================
-  var _playbackRate = 1.5; // 默认 1.5 倍速
+  var _playbackRate = 1.2; // 默认 1.5x（实际倍率）
 
   function speak(wordId, onEnd) {
     var audio = new Audio("audio/" + wordId + ".mp3");
@@ -53,8 +53,8 @@
     _playbackRate = rate;
     var btn1x = $("#speed-1x");
     var btn15x = $("#speed-1-5x");
-    if (btn1x) btn1x.classList.toggle("active", rate === 1);
-    if (btn15x) btn15x.classList.toggle("active", rate === 1.5);
+    if (btn1x) btn1x.classList.toggle("active", rate === 0.8);
+    if (btn15x) btn15x.classList.toggle("active", rate === 1.2);
   }
 
   function createNewProgress() {
@@ -298,7 +298,7 @@
     var html = '';
     if (word.emoji) html += '<div class="card-emoji">' + word.emoji + '</div>';
     else html += '<div class="card-emoji"></div>';
-    html += '<div class="card-word-row"><div class="card-word">' + (word.word || '') + '</div><span class="play-btn" onclick="speak(\'' + word.id + '\')">🔊</span><span class="speed-btn' + (_playbackRate === 1 ? ' active' : '') + '" onclick="window.setSpeed(1)">1x</span><span class="speed-btn' + (_playbackRate === 1.5 ? ' active' : '') + '" onclick="window.setSpeed(1.5)">1.5x</span></div>';
+    html += '<div class="card-word-row"><div class="card-word">' + (word.word || '') + '</div><span class="play-btn" onclick="speak(\'' + word.id + '\')">🔊</span><span class="speed-btn' + (_playbackRate === 0.8 ? ' active' : '') + '" onclick="window.setSpeed(0.8)">1x</span><span class="speed-btn' + (_playbackRate === 1.2 ? ' active' : '') + '" onclick="window.setSpeed(1.2)">1.5x</span></div>';
     html += '<div class="card-phonetic">' + (word.phonetic || '') + '</div>';
     html += '<div class="card-meaning">' + (word.pos ? word.pos + ' ' : '') + (word.meaning || '') + '</div>';
     if (word.root) {
