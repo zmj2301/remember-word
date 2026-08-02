@@ -41,18 +41,18 @@ def clean_text_for_tts(word_text):
     清理 word 字段，去掉语法标记，只保留核心朗读内容。
     例如: "feel free (to do sth)" → "feel free"
           "lend (sb) a hand" → "lend a hand"
-          "take sb’s breath away" → "take someone’s breath away"
+          "take sb’s breath away" → "take somebody’s breath away"
     课本占位符替换（TTS 能正确发音）:
-          sb  → someone   (课本里代表"某人")
+          sb  → somebody   (课本里代表"某人")
           sth → something (课本里代表"某事")
     """
     text = word_text
     # 替换课本占位符（先替换所有格，再替换普通形式）
-    text = text.replace("sb’s", "someone’s")
-    text = text.replace("sb's", "someone's")
-    text = text.replace("sb’", "someone’")
+    text = text.replace("sb’s", "somebody’s")
+    text = text.replace("sb's", "somebody's")
+    text = text.replace("sb’", "somebody’")
     text = text.replace("sth", "something")
-    text = text.replace("sb", "someone")
+    text = text.replace("sb", "somebody")
     # 去掉括号及其内容
     text = re.sub(r'\([^)]*\)', '', text)
     # 去掉 … 符号
