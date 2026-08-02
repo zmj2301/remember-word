@@ -30,6 +30,20 @@
     return progress.dueDate <= todayStr();
   }
 
+  // ===================== 语音朗读 =====================
+  function speak(wordId) {
+    var audio = new Audio("audio/" + wordId + ".mp3");
+    audio.play();
+    // 按钮动画反馈
+    var btn = $("#play-btn");
+    if (btn) { btn.classList.add("playing"); }
+    audio.onended = function () {
+      if (btn) { btn.classList.remove("playing"); }
+    };
+  }
+  // 暴露到全局，供临时卡片的 onclick 使用
+  window.speak = speak;
+
   function createNewProgress() {
     const today = todayStr();
     return {
@@ -271,7 +285,7 @@
     var html = '';
     if (word.emoji) html += '<div class="card-emoji">' + word.emoji + '</div>';
     else html += '<div class="card-emoji"></div>';
-    html += '<div class="card-word">' + (word.word || '') + '</div>';
+    html += '<div class="card-word-row"><div class="card-word">' + (word.word || '') + '</div><span class="play-btn" onclick="speak(\'' + word.id + '\')">🔊</span></div>';
     html += '<div class="card-phonetic">' + (word.phonetic || '') + '</div>';
     html += '<div class="card-meaning">' + (word.pos ? word.pos + ' ' : '') + (word.meaning || '') + '</div>';
     if (word.root) {
@@ -611,6 +625,16 @@
     if (word.emoji) { emojiEl.style.display = ""; emojiEl.textContent = word.emoji; }
     else { emojiEl.style.display = "none"; }
     $("#card-word").textContent = word.word;
+    // 绑定朗读按钮
+    var playBtn = $("#play-btn");
+    if (playBtn) {
+      playBtn.onclick = function (e) { e.stopPropagation(); speak(word.id); };
+    }
+    // 绑定默写面朗读按钮
+    var playWriteBtn = $("#play-btn-write");
+    if (playWriteBtn) {
+      playWriteBtn.onclick = function (e) { e.stopPropagation(); speak(word.id); };
+    }
     $("#card-phonetic").textContent = word.phonetic || "";
     $("#card-pos-meaning").textContent = (word.pos ? word.pos + " " : "") + word.meaning;
     setBlock("card-root", word.root);
@@ -850,6 +874,8 @@
       // 只保留最近 100 条
       if (dictStats.sessions.length > 100) dictStats.sessions = dictStats.sessions.slice(-100);
       Store.saveDictationStats(dictStats);
+      // 记录今天学习了
+      Store.recordStudyDay();
 
       // 更新完成页 UI
       var total = dictationSession.length;
@@ -923,28 +949,137 @@
   // ===================== 统计页 =====================
   function renderStats() {
     const allProgress = Store.getAllProgress();
-    const total = DICT.length;
-    const learned = Object.keys(allProgress).length;
-    const mastered = Object.values(allProgress).filter(isMastered).length;
+    const sel = Store.getSettings().selectedUnit || "all";
+    const filteredDict = sel === "all" ? DICT : DICT.filter(function(w) { return w.unit === sel; });
+    const total = filteredDict.length;
+    const learned = filteredDict.filter(function(w) { return allProgress[w.id]; }).length;
+    const mastered = filteredDict.filter(function(w) {
+      return allProgress[w.id] && isMastered(allProgress[w.id]);
+    }).length;
 
-    // 纯默写统计：从 session 记录汇总
-    var dictStats = Store.getDictationStats() || { sessions: [] };
-    var dictTotal = 0, dictCorrect = 0;
-    dictStats.sessions.forEach(function (s) {
-      dictTotal += s.total;
-      dictCorrect += s.correct;
-    });
-    var dictAccuracy = dictTotal > 0 ? Math.round((dictCorrect / dictTotal) * 100) : 0;
+    // 连续打卡天数 & 累计学习天数
+    const studyDays = Store.getStudyDays();
+    const totalDays = studyDays.length;
+    let streak = 0;
+    if (totalDays > 0) {
+      const sorted = studyDays.slice().sort().reverse(); // 最新在前
+      const today = todayStr();
+      const yesterday = addDays(today, -1);
+      // 连续天数：从今天或昨天开始往回数
+      let checkDate = sorted[0] === today ? today : (sorted[0] === yesterday ? yesterday : null);
+      if (checkDate) {
+        streak = 1;
+        for (let i = 1; i < sorted.length; i++) {
+          const prev = addDays(checkDate, -1);
+          if (sorted.indexOf(prev) !== -1) {
+            streak++;
+            checkDate = prev;
+          } else {
+            break;
+          }
+        }
+      }
+    }
 
-    $("#stats-learned").textContent = learned;
+    $("#stats-streak").textContent = streak;
+    $("#stats-total-days").textContent = totalDays;
     $("#stats-mastered").textContent = mastered;
+    $("#stats-learned").textContent = learned;
     $("#stats-total").textContent = total;
-    $("#stats-accuracy").textContent = dictAccuracy + "%";
-    $("#stats-answers").textContent = dictTotal;
 
     const pct = total > 0 ? Math.round((learned / total) * 100) : 0;
     $("#stats-progress-bar").style.width = pct + "%";
     $("#stats-progress-text").textContent = pct + "%";
+
+    // ---- 今日待办 ----
+    const todoContainer = $("#today-todo-list");
+    const today = todayStr();
+    const settings = Store.getSettings();
+    const dailyNewLimit = settings.dailyNewLimit || 10;
+
+    // 1. 待复习的词（dueDate <= 今天，且未掌握）
+    const reviewWords = filteredDict.filter(function(w) {
+      const p = allProgress[w.id];
+      return p && p.dueDate && p.dueDate <= today && !isMastered(p);
+    });
+
+    // 2. 今天已学了多少新词
+    const todayLearned = filteredDict.filter(function(w) {
+      const p = allProgress[w.id];
+      return p && p.learnedDate === today;
+    }).length;
+
+    // 3. 还能学多少新词
+    const remainingNew = Math.max(0, dailyNewLimit - todayLearned);
+
+    // 4. 未学过的词
+    const unlearnedCount = total - learned;
+
+    var todoHtml = '';
+
+    // 待复习
+    if (reviewWords.length > 0) {
+      todoHtml += '<div class="todo-item">'
+        + '<span class="todo-icon">🔄</span>'
+        + '<div class="todo-info">'
+        + '<div class="todo-title">待复习单词</div>'
+        + '<div class="todo-desc">有 ' + reviewWords.length + ' 个单词需要复习</div>'
+        + '</div>'
+        + '<span class="todo-badge pending">待复习</span>'
+        + '</div>';
+    } else {
+      todoHtml += '<div class="todo-item done">'
+        + '<span class="todo-icon">✅</span>'
+        + '<div class="todo-info">'
+        + '<div class="todo-title">待复习单词</div>'
+        + '<div class="todo-desc">今天没有需要复习的单词</div>'
+        + '</div>'
+        + '<span class="todo-badge done">已完成</span>'
+        + '</div>';
+    }
+
+    // 新词学习
+    if (remainingNew > 0 && unlearnedCount > 0) {
+      const showCount = Math.min(remainingNew, unlearnedCount);
+      todoHtml += '<div class="todo-item">'
+        + '<span class="todo-icon">📚</span>'
+        + '<div class="todo-info">'
+        + '<div class="todo-title">学习新单词</div>'
+        + '<div class="todo-desc">今天还能学 ' + showCount + ' 个新词（已学 ' + todayLearned + '/' + dailyNewLimit + '）</div>'
+        + '</div>'
+        + '<span class="todo-badge pending">待学习</span>'
+        + '</div>';
+    } else if (unlearnedCount > 0) {
+      todoHtml += '<div class="todo-item done">'
+        + '<span class="todo-icon">✅</span>'
+        + '<div class="todo-info">'
+        + '<div class="todo-title">学习新单词</div>'
+        + '<div class="todo-desc">今天的新词额度已用完（' + todayLearned + '/' + dailyNewLimit + '）</div>'
+        + '</div>'
+        + '<span class="todo-badge done">已完成</span>'
+        + '</div>';
+    } else {
+      todoHtml += '<div class="todo-item done">'
+        + '<span class="todo-icon">🎉</span>'
+        + '<div class="todo-info">'
+        + '<div class="todo-title">学习新单词</div>'
+        + '<div class="todo-desc">所有单词都已学过啦！</div>'
+        + '</div>'
+        + '<span class="todo-badge done">已完成</span>'
+        + '</div>';
+    }
+
+    // 纯默写
+    todoHtml += '<div class="todo-item">'
+      + '<span class="todo-icon">🔥</span>'
+      + '<div class="todo-info">'
+      + '<div class="todo-title">纯默写测试</div>'
+      + '<div class="todo-desc">检验记忆效果，挑战一下吧</div>'
+      + '</div>'
+      + '<span class="todo-badge pending">去默写</span>'
+      + '</div>';
+
+    todoContainer.innerHTML = todoHtml;
   }
 
   // ===================== 手势 =====================

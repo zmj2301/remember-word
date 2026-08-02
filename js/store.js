@@ -7,6 +7,7 @@ const Store = (() => {
   const PROGRESS_KEY = "vocab_progress_v1";
   const SETTINGS_KEY = "vocab_settings_v1";
   const DICTATION_KEY = "vocab_dictation_stats_v1";
+  const STUDY_DAYS_KEY = "vocab_study_days_v1";
 
   /** 读取全部学习进度 { wordId: progressObj } */
   function getAllProgress() {
@@ -83,6 +84,31 @@ const Store = (() => {
     localStorage.removeItem(PROGRESS_KEY);
   }
 
+  /** 记录今天学习了（去重） */
+  function recordStudyDay() {
+    try {
+      var days = JSON.parse(localStorage.getItem(STUDY_DAYS_KEY) || "[]");
+      var today = new Date();
+      var tz = today.getTimezoneOffset() * 60000;
+      var todayStr = new Date(today - tz).toISOString().slice(0, 10);
+      if (days.indexOf(todayStr) === -1) {
+        days.push(todayStr);
+        localStorage.setItem(STUDY_DAYS_KEY, JSON.stringify(days));
+      }
+    } catch (e) {
+      console.error("记录学习天数失败：", e);
+    }
+  }
+
+  /** 获取所有学习日期数组 ["2026-07-29", "2026-07-30", ...] */
+  function getStudyDays() {
+    try {
+      return JSON.parse(localStorage.getItem(STUDY_DAYS_KEY) || "[]");
+    } catch (e) {
+      return [];
+    }
+  }
+
   /** 读取纯默写统计 */
   function getDictationStats() {
     try {
@@ -111,7 +137,9 @@ const Store = (() => {
     importData,
     resetAll,
     getDictationStats,
-    saveDictationStats
+    saveDictationStats,
+    recordStudyDay,
+    getStudyDays
   };
 })();
 
