@@ -45,6 +45,7 @@
         <div class="unit-picker-btns" id="unit-picker-btns"></div>
       </div>
 
+      <div class="home-group-label">📅 今日任务（待复习 + 每日新词）</div>
       <div class="home-modes">
         <button id="home-browse" class="mode-btn">
           <span class="mode-icon">📖</span>
@@ -62,7 +63,50 @@
           <span class="mode-desc">快速刷词，滑动即写</span>
         </button>
       </div>
+
+      <button id="home-free" class="mode-btn free-btn">
+        <span class="mode-icon">🏃</span>
+        <span class="mode-name">自由刷题</span>
+        <span class="mode-desc">选一个单元，不限数量地刷</span>
+      </button>
       <p class="home-tip">💡 提示：上下滑动切换卡片，像刷视频一样</p>
+    </div>
+  </section>
+
+  <!-- ========== 自由刷题 ========== -->
+  <section id="screen-free" class="screen">
+    <header class="topbar">
+      <h1>🏃 自由刷题</h1>
+    </header>
+    <div class="free-body">
+      <div class="free-info">
+        <span class="free-badge">不限数量</span>
+        <span class="free-desc" id="free-unit-info">选择一个单元，开始刷词</span>
+      </div>
+
+      <div class="unit-picker">
+        <div class="unit-picker-title">📚 选择单元</div>
+        <div class="unit-picker-btns" id="free-unit-btns"></div>
+      </div>
+
+      <div class="free-modes">
+        <button id="free-browse" class="mode-btn" disabled>
+          <span class="mode-icon">📖</span>
+          <span class="mode-name">记单词</span>
+          <span class="mode-desc">纯滑动浏览</span>
+        </button>
+        <button id="free-write" class="mode-btn primary" disabled>
+          <span class="mode-icon">✍️</span>
+          <span class="mode-name">默写</span>
+          <span class="mode-desc">学习+默写检验</span>
+        </button>
+        <button id="free-dictation" class="mode-btn accent" disabled>
+          <span class="mode-icon">🔥</span>
+          <span class="mode-name">纯默写</span>
+          <span class="mode-desc">快速刷词，滑动即写</span>
+        </button>
+      </div>
+      <p class="home-tip">💡 已选单元：<strong id="free-selected-text">未选择</strong></p>
     </div>
   </section>
 
@@ -253,9 +297,9 @@
     <button class="nav-btn" data-screen="settings"><span class="nav-icon">⚙️</span><span>设置</span></button>
   </nav>
 
-  <script src="js/dict.js?v=20"></script>
-  <script src="js/store.js?v=20"></script>
-  <script src="js/swipe.js?v=20"></script>
-  <script src="js/app.js?v=20"></script>
+  <script src="js/dict.js?v=21"></script>
+  <script src="js/store.js?v=21"></script>
+  <script src="js/swipe.js?v=21"></script>
+  <script src="js/app.js?v=21"></script>
 </body>
 </html>

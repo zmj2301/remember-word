@@ -160,6 +160,22 @@ input { -webkit-user-select: text; user-select: text; }
   gap: 10px;
   margin-top: 8px;
 }
+.home-group-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 20px 0 10px;
+  padding-left: 4px;
+}
+.home-group-label::before { content: ""; display: inline-block; width: 4px; height: 16px; background: #4f8cff; border-radius: 2px; margin-right: 8px; vertical-align: -2px; }
+.mode-btn.free-btn {
+  background: linear-gradient(135deg, #f0f4ff, #e8ecff);
+  border: 1.5px solid #a0b8ff;
+  box-shadow: 0 4px 16px rgba(79, 140, 255, 0.15);
+  margin-top: 12px;
+}
+.mode-btn.free-btn .mode-name { color: #1a1a2e; }
+.mode-btn.free-btn .mode-desc { color: #666; }
 .mode-btn {
   border: 1.5px solid #4f8cff;
   border-radius: 16px;
@@ -251,6 +267,23 @@ input { -webkit-user-select: text; user-select: text; }
 .mode-tag.review { background: #fff3e0; color: #ff9800; }
 .mode-tag.browse { background: #e6f7ee; color: #2ecc71; }
 .mode-tag.dictation { background: #ffe8e8; color: #ff4757; }
+.mode-tag.free { background: #e8ecff; color: #5a6db0; }
+
+/* ===== 自由刷题页 ===== */
+.free-body { padding: 20px; flex: 1; }
+.free-info {
+  display: flex; align-items: center; justify-content: center;
+  gap: 10px; flex-wrap: wrap;
+  background: linear-gradient(135deg, #e8ecff, #f0f4ff);
+  border-radius: 14px; padding: 16px; margin-bottom: 16px;
+  box-shadow: 0 4px 16px rgba(79, 140, 255, 0.1);
+}
+.free-badge {
+  background: #4f8cff; color: #fff; font-size: 12px; font-weight: 700;
+  padding: 4px 12px; border-radius: 12px;
+}
+.free-desc { font-size: 14px; color: #5a6db0; font-weight: 600; }
+.free-modes { margin-top: 12px; }
 
 .card-stage {
   flex: 1;

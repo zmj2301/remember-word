@@ -361,8 +361,8 @@
       } else {
         renderCard();
       }
-      // 记单词模式：滑动后自动播放
-      if (appMode === "browse") {
+      // 记单词/自由刷题模式：滑动后自动播放
+      if (appMode === "browse" || appMode === "free") {
         var autoWord = studyQueue[queueIndex].word;
         setTimeout(function() { speak(autoWord.id); }, 200);
       }
@@ -395,8 +395,8 @@
       } else {
         renderCard();
       }
-      // 记单词模式：滑动后自动播放
-      if (appMode === "browse") {
+      // 记单词/自由刷题模式：滑动后自动播放
+      if (appMode === "browse" || appMode === "free") {
         var autoWord = studyQueue[queueIndex].word;
         setTimeout(function() { speak(autoWord.id); }, 200);
       }
@@ -510,6 +510,7 @@
     if (btn) btn.classList.add("active");
     if (name === "home") renderHome();
     if (name === "stats") renderStats();
+    if (name === "free") renderFreePage();
   }
 
   // ===================== 首页 =====================
@@ -600,6 +601,83 @@
     }
   }
 
+  // ===================== 自由刷题 =====================
+  var _freeUnit = "all"; // 用户选中的单元
+
+  /** 自由刷题队列：选中单元的全部单词，不按每日新词限制，不设上限 */
+  function buildFreeQueue() {
+    const words = DICT.filter(function(w) {
+      if (_freeUnit === "all") return true;
+      return w.unit === _freeUnit;
+    });
+    const queue = words.map(function(w) { return { word: w, mode: "free" }; });
+    return { queue };
+  }
+
+  function renderFreePage() {
+    // 渲染单元选择器（与首页共用样式，独立容器）
+    var container = $("#free-unit-btns");
+    if (!container) return;
+    var settings = Store.getSettings();
+    var selectedUnit = settings.selectedUnit || "all";
+    var allProgress = Store.getAllProgress();
+    var html = '';
+
+    // "全部"按钮
+    var allCount = DICT.length;
+    var allLearned = Object.keys(allProgress).length;
+    var cls = _freeUnit === "all" ? "active" : "";
+    html += '<button class="unit-btn ' + cls + '" data-unit="all">全部</button>';
+
+    DICT.forEach(function(w) {
+      var unit = w.unit;
+      if (!unit) return;
+      if (unit in html) return; // 去重
+      var unitWords = DICT.filter(function(x) { return x.unit === unit; });
+      var unitLearned = unitWords.filter(function(x) { return allProgress[x.id]; }).length;
+      var unitCls = _freeUnit === unit ? "active" : "";
+      var text = unit + ' · ' + unitLearned + '/' + unitWords.length;
+      html += '<button class="unit-btn ' + unitCls + '" data-unit="' + unit + '">' + text + '</button>';
+    });
+    container.innerHTML = html;
+
+    // 绑定单元选择
+    container.onclick = function(e) {
+      var btn = e.target.closest(".unit-btn");
+      if (!btn) return;
+      _freeUnit = btn.getAttribute("data-unit") || "all";
+      renderFreePage();
+    };
+
+    // 更新状态文字
+    var freeCount = _freeUnit === "all" ? DICT.length : DICT.filter(function(w) { return w.unit === _freeUnit; }).length;
+    var freeInfo = $("#free-unit-info");
+    if (freeInfo) freeInfo.textContent = _freeUnit === "all" ? "全部单元共 " + freeCount + " 个单词" : _freeUnit + " 共 " + freeCount + " 个单词";
+    var selText = $("#free-selected-text");
+    if (selText) selText.textContent = _freeUnit === "all" ? "全部" : _freeUnit;
+
+    // 启用模式按钮
+    var browseBtn = $("#free-browse");
+    var writeBtn = $("#free-write");
+    var dictBtn = $("#free-dictation");
+    if (browseBtn) browseBtn.disabled = false;
+    if (writeBtn) writeBtn.disabled = false;
+    if (dictBtn) dictBtn.disabled = false;
+  }
+
+  function startFreeStudy(mode) {
+    appMode = mode || "write";
+    const { queue } = buildFreeQueue();
+    if (queue.length === 0) { showScreen("home"); return; }
+    studyQueue = queue;
+    queueIndex = 0;
+    showScreen("study");
+    renderCard();
+    if (appMode === "dictation") {
+      enterWritePhase();
+    }
+  }
+
   // ===================== 卡片渲染 =====================
   // 显示/隐藏词根联想等信息块
   function setBlock(id, content) {
@@ -636,6 +714,9 @@
     if (appMode === "browse") {
       $("#study-mode").textContent = unitName ? unitName + " · 记单词" : "记单词";
       $("#study-mode").className = "mode-tag browse";
+    } else if (appMode === "free") {
+      $("#study-mode").textContent = unitName ? unitName + " · 自由刷题" : "自由刷题";
+      $("#study-mode").className = "mode-tag free";
     } else {
       $("#study-mode").textContent = unitName
         ? unitName + " · " + (item.mode === "review" ? "复习" : "新词")
@@ -1179,6 +1260,13 @@
     $("#home-start").addEventListener("click", () => startStudy("write"));
     $("#home-browse").addEventListener("click", () => startStudy("browse"));
     $("#home-dictation").addEventListener("click", () => startStudy("dictation"));
+    $("#home-free").addEventListener("click", () => {
+      showScreen("free");
+      renderFreePage();
+    });
+    $("#free-browse").addEventListener("click", () => startFreeStudy("browse"));
+    $("#free-write").addEventListener("click", () => startFreeStudy("write"));
+    $("#free-dictation").addEventListener("click", () => startFreeStudy("dictation"));
     $("#done-back").addEventListener("click", () => showScreen("home"));
     $("#done-redo-wrong").addEventListener("click", redoDictation);
     $("#write-submit").addEventListener("click", submitWrite);
