@@ -133,6 +133,85 @@
     return `已复习 ${progress.stage}/5 次`;
   }
 
+  // ===================== 自然拼读模式 =====================
+  var _phonicsMode = false;
+
+  function togglePhonics() {
+    _phonicsMode = !_phonicsMode;
+    var btn = $("#phonics-toggle");
+    if (btn) btn.classList.toggle("active", _phonicsMode);
+    renderCard();
+  }
+  window.togglePhonics = togglePhonics;
+
+  function renderPhonicsWord(wordObj) {
+    if (!wordObj || !window.PHONICS) return wordObj ? wordObj.word : '';
+    var phonics = window.PHONICS[wordObj.id];
+    if (!phonics || phonics === wordObj.word) return wordObj.word;
+    var tokens = phonics.split(' ');
+    var htmlParts = [];
+    tokens.forEach(function (token) {
+      var segments = token.split('-');
+      segments.forEach(function (seg, idx) {
+        htmlParts.push('<span class="phonics-part">' + seg + '</span>');
+        if (idx < segments.length - 1) {
+          htmlParts.push('<span class="phonics-hyphen">-</span>');
+        }
+      });
+      htmlParts.push(' ');
+    });
+    return htmlParts.join('').trim();
+  }
+
+  function speakPhonics(wordId, wordObj, onDone) {
+    if (!_phonicsMode || !wordObj || !window.PHONICS) {
+      speak(wordId, onDone);
+      return;
+    }
+    var phonics = window.PHONICS[wordId];
+    if (!phonics || phonics === wordObj.word) {
+      speak(wordId, onDone);
+      return;
+    }
+    var segments = [];
+    phonics.split(' ').forEach(function (token) {
+      token.split('-').forEach(function (p) {
+        if (p && p.toLowerCase() !== 'sb' && p.toLowerCase() !== 'sth') {
+          segments.push(p);
+        }
+      });
+    });
+    if (segments.length <= 1) {
+      speak(wordId, onDone);
+      return;
+    }
+    var allParts = document.querySelectorAll('#card-word .phonics-part');
+    var segIndex = 0;
+    var wordEl = document.querySelector('#card-word');
+    function clearHL() { allParts.forEach(function (el) { el.classList.remove('phonics-highlight'); }); }
+    function playNext() {
+      if (segIndex < segments.length) {
+        clearHL();
+        if (allParts[segIndex]) allParts[segIndex].classList.add('phonics-highlight');
+        var u = new SpeechSynthesisUtterance(segments[segIndex]);
+        u.lang = 'en-US';
+        u.rate = _playbackRate === 0.8 ? 0.85 : 1.0;
+        u.onend = function () { segIndex++; playNext(); };
+        u.onerror = function () { segIndex++; playNext(); };
+        speechSynthesis.cancel();
+        speechSynthesis.speak(u);
+      } else {
+        clearHL();
+        speak(wordId, function () {
+          if (wordEl) wordEl.classList.remove('phonics-highlight');
+          speechSynthesis.cancel();
+          if (onDone) onDone();
+        });
+      }
+    }
+    playNext();
+  }
+
   // ===================== 依赖的全局模块 =====================
   const DICT = window.DICTIONARY;
   const Store = window.Store;
@@ -397,7 +476,13 @@
       // 记单词/自由刷题模式：滑动后自动播放单词（不自动读例句）
       if (appMode === "browse" || appMode === "free") {
         var autoWord = studyQueue[queueIndex].word;
-        setTimeout(function() { speak(autoWord.id); }, 200);
+        setTimeout(function() {
+          if (_phonicsMode) {
+            speakPhonics(autoWord.id, autoWord);
+          } else {
+            speak(autoWord.id);
+          }
+        }, 200);
       }
       if (_animTargetTempId) {
         var el = document.getElementById(_animTargetTempId);
@@ -431,7 +516,13 @@
       // 记单词/自由刷题模式：滑动后自动播放单词（不自动读例句）
       if (appMode === "browse" || appMode === "free") {
         var autoWord = studyQueue[queueIndex].word;
-        setTimeout(function() { speak(autoWord.id); }, 200);
+        setTimeout(function() {
+          if (_phonicsMode) {
+            speakPhonics(autoWord.id, autoWord);
+          } else {
+            speak(autoWord.id);
+          }
+        }, 200);
       }
       if (_animTargetTempId) {
         var el = document.getElementById(_animTargetTempId);
@@ -541,6 +632,12 @@
       cancelAnimation();
       cardSlider.style.transform = "";
       _sliderY = 0;
+    }
+    // 离开学习页时隐藏自然拼读开关
+    if (name !== "study") {
+      var pToggle = $("#phonics-toggle");
+      if (pToggle) { pToggle.style.display = "none"; pToggle.classList.remove("active"); }
+      _phonicsMode = false;
     }
     // 离开学习页时清理纯默写 session
     if (name !== "study" && name !== "done") {
@@ -655,7 +752,11 @@
     renderCard();
     // 记单词模式：首张卡片自动播放单词
     if (appMode === "browse") {
-      setTimeout(function() { speak(studyQueue[0].word.id); }, 200);
+      setTimeout(function() {
+        var w = studyQueue[0].word;
+        if (_phonicsMode) { speakPhonics(w.id, w); }
+        else { speak(w.id); }
+      }, 200);
     }
     // 默写模式：先显示学习面，上滑再进入默写
     // 纯默写模式：直接进入默写面
@@ -745,7 +846,11 @@
     renderCard();
     // 自由刷题记单词模式：首张卡片自动播放单词
     if (appMode === "browse") {
-      setTimeout(function() { speak(studyQueue[0].word.id); }, 200);
+      setTimeout(function() {
+        var w = studyQueue[0].word;
+        if (_phonicsMode) { speakPhonics(w.id, w); }
+        else { speak(w.id); }
+      }, 200);
     }
     if (appMode === "dictation") {
       enterWritePhase();
@@ -803,10 +908,25 @@
     if (word.emoji) { emojiEl.style.display = ""; emojiEl.textContent = word.emoji; }
     else { emojiEl.style.display = "none"; }
     $("#card-word").textContent = word.word;
+    // 自然拼读模式：替换显示单词分段
+    var wordEl = $("#card-word");
+    wordEl.classList.toggle("phonics-mode", _phonicsMode);
+    if (_phonicsMode && window.PHONICS && window.PHONICS[word.id]) {
+      wordEl.innerHTML = renderPhonicsWord(word);
+    } else {
+      wordEl.textContent = word.word;
+    }
     // 绑定朗读按钮
     var playBtn = $("#play-btn");
     if (playBtn) {
-      playBtn.onclick = function (e) { e.stopPropagation(); speak(word.id); };
+      playBtn.onclick = function (e) {
+        e.stopPropagation();
+        if (_phonicsMode) {
+          speakPhonics(word.id, word);
+        } else {
+          speak(word.id);
+        }
+      };
     }
     // 绑定默写面朗读按钮
     var playWriteBtn = $("#play-btn-write");
@@ -838,6 +958,9 @@
       $("#card-stage").style.display = "none";
       setHint(queueIndex < studyQueue.length - 1
         ? "上滑看下一个 ↑" : "已是最后一个 ↑返回");
+      // 显示自然拼读开关
+      var pToggle = $("#phonics-toggle");
+      if (pToggle) pToggle.style.display = "";
     } else if (appMode === "dictation") {
       // 纯默写模式：隐藏学习面的按钮，直接进入默写
       $("#card-write-btn").style.display = "none";
@@ -849,11 +972,17 @@
         : "纯默写";
       $("#study-mode").className = "mode-tag dictation";
       setHint("输入后提交或上滑 · 自动进入下一词");
+      // 隐藏自然拼读开关
+      var pToggle = $("#phonics-toggle");
+      if (pToggle) pToggle.style.display = "none";
     } else {
       // 默写模式：学习面显示"上滑下一词，左滑开始默写"
       $("#card-write-btn").style.display = "";
       $("#card-stage").style.display = "";
       setHint("上滑下一词 · 左滑开始默写");
+      // 隐藏自然拼读开关
+      var pToggle = $("#phonics-toggle");
+      if (pToggle) pToggle.style.display = "none";
     }
   }
 
@@ -879,6 +1008,9 @@
     $("#write-hint").textContent = "";
     showCardFace("card-write");
     setHint("上滑录入答案 · 全部完成后统一批改");
+    // 隐藏自然拼读开关
+    var pToggle = $("#phonics-toggle");
+    if (pToggle) pToggle.style.display = "none";
   }
 
   function enterWritePhase() {
@@ -1349,6 +1481,11 @@
     });
     $("#card-next-btn").addEventListener("click", nextCard);
     $("#card-write-btn").addEventListener("click", enterWritePhase);
+
+    // 自然拼读初始化
+    _phonicsMode = false;
+    var pBtn = $("#phonics-toggle");
+    if (pBtn) pBtn.classList.remove("active");
 
     bindSettings();
     initSwipe();

@@ -266,6 +266,15 @@ input { -webkit-user-select: text; user-select: text; }
   background: #fff;
 }
 .progress-text { font-size: 15px; color: #666; font-weight: 600; }
+.phonics-toggle {
+  font-size: 20px; cursor: pointer; opacity: 0.4;
+  transition: opacity .2s, transform .15s;
+  user-select: none; line-height: 1;
+  display: none;
+}
+.phonics-toggle:hover { opacity: 0.7; }
+.phonics-toggle:active { transform: scale(0.85); }
+.phonics-toggle.active { opacity: 1; animation: pulse 0.4s ease-in-out; }
 .mode-tag {
   padding: 4px 12px;
   border-radius: 20px;
@@ -324,6 +333,28 @@ input { -webkit-user-select: text; user-select: text; }
 /* 学习面 */
 .card-emoji { font-size: 80px; margin: 12px 0 8px; }
 .card-word { font-size: 40px; font-weight: 800; color: #1a1a2e; }
+/* 自然拼读模式：单词分段显示 */
+.card-word.phonics-mode {
+  font-size: 32px;
+  letter-spacing: 1px;
+}
+.card-word.phonics-mode .phonics-part {
+  display: inline;
+  padding: 0 1px;
+  border-radius: 4px;
+  transition: background .15s, color .15s;
+}
+.card-word.phonics-mode .phonics-part.phonics-highlight {
+  background: #4f8cff;
+  color: #fff;
+  border-radius: 6px;
+  padding: 2px 4px;
+}
+.card-word.phonics-mode .phonics-hyphen {
+  display: inline;
+  color: #4f8cff;
+  margin: 0 2px;
+}
 .card-word-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 8px 0 4px; }
 .play-btn { font-size: 28px; cursor: pointer; opacity: 0.7; transition: opacity .15s, transform .1s; }
 .play-btn:hover { opacity: 1; }
