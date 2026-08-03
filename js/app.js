@@ -189,27 +189,34 @@
     var segIndex = 0;
     var wordEl = document.querySelector('#card-word');
     function clearHL() { allParts.forEach(function (el) { el.classList.remove('phonics-highlight'); }); }
-    function playNext() {
+    function playNextSegment() {
       if (segIndex < segments.length) {
         clearHL();
         if (allParts[segIndex]) allParts[segIndex].classList.add('phonics-highlight');
-        var u = new SpeechSynthesisUtterance(segments[segIndex]);
-        u.lang = 'en-US';
-        u.rate = _playbackRate === 0.8 ? 0.85 : 1.0;
-        u.onend = function () { segIndex++; playNext(); };
-        u.onerror = function () { segIndex++; playNext(); };
-        speechSynthesis.cancel();
-        speechSynthesis.speak(u);
+        // 使用预录音频（Edge TTS，与单词音频同音色）
+        var seg = segments[segIndex].toLowerCase();
+        var audio = new Audio("audio/ph_" + seg + ".mp3");
+        audio.playbackRate = _playbackRate;
+        audio.play();
+        audio.onended = function () {
+          segIndex++;
+          playNextSegment();
+        };
+        audio.onerror = function () {
+          // 音频文件不存在时跳过
+          segIndex++;
+          playNextSegment();
+        };
       } else {
+        // 所有段读完，播放整词音频
         clearHL();
         speak(wordId, function () {
           if (wordEl) wordEl.classList.remove('phonics-highlight');
-          speechSynthesis.cancel();
           if (onDone) onDone();
         });
       }
     }
-    playNext();
+    playNextSegment();
   }
 
   // ===================== 依赖的全局模块 =====================
