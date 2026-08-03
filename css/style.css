@@ -270,7 +270,6 @@ input { -webkit-user-select: text; user-select: text; }
   font-size: 20px; cursor: pointer; opacity: 0.4;
   transition: opacity .2s, transform .15s;
   user-select: none; line-height: 1;
-  display: none;
 }
 .phonics-toggle:hover { opacity: 0.7; }
 .phonics-toggle:active { transform: scale(0.85); }

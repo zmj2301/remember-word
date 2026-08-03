@@ -960,7 +960,7 @@
         ? "上滑看下一个 ↑" : "已是最后一个 ↑返回");
       // 显示自然拼读开关
       var pToggle = $("#phonics-toggle");
-      if (pToggle) pToggle.style.display = "";
+      if (pToggle) pToggle.style.display = "inline";
     } else if (appMode === "dictation") {
       // 纯默写模式：隐藏学习面的按钮，直接进入默写
       $("#card-write-btn").style.display = "none";
@@ -1485,7 +1485,7 @@
     // 自然拼读初始化
     _phonicsMode = false;
     var pBtn = $("#phonics-toggle");
-    if (pBtn) pBtn.classList.remove("active");
+    if (pBtn) { pBtn.classList.remove("active"); pBtn.style.display = "none"; }
 
     bindSettings();
     initSwipe();
