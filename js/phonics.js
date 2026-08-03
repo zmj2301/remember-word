@@ -4,7 +4,7 @@
  * 例如: hello → he-llo, fantastic → fan-tas-tic
  */
 const PHONICS = {
-  "ancient": "an-ci-ent",
+  "ancient": "an-cient",
   "camp": "camp",
   "landscape": "land-scape",
   "strange": "strange",
@@ -195,8 +195,8 @@ const PHONICS = {
   "character": "char-ac-ter",
   "pauper": "pau-per",
   "exchange": "ex-change",
-  "accident": "ac-ci-dent",
-  "by_accident": "by ac-ci-dent",
+  "accident": "ac-cid-ent",
+  "by_accident": "by ac-cid-ent",
   "expect": "ex-pect",
   "silver": "sil-ver",
   "lining": "lin-ing",
@@ -331,7 +331,7 @@ const PHONICS = {
   "college": "col-lege",
   "host": "host",
   "hostess": "host-ess",
-  "recipe": "re-ci-pe",
+  "recipe": "recipe",
   "cream": "cream",
   "crust": "crust",
   "mixture": "mix-ture",
