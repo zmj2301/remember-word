@@ -299,6 +299,18 @@
     <button class="nav-btn" data-screen="settings"><span class="nav-icon">⚙️</span><span>设置</span></button>
   </nav>
 
+  <script>
+    // ===================== 后端 API 配置 =====================
+    // 部署到 VPS 后修改下面的地址和密钥
+    // backendUrl: 后端 /api 地址（不含结尾斜杠）
+    // apiKey: 与后端 config.py 中 API_KEY 一致
+    // 留空或不配置则自动降级为纯 localStorage 模式
+    const API_CONFIG = {
+      backendUrl: "https://your-server.com/api",
+      apiKey: "your-api-key-here"
+    };
+  </script>
+
   <script src="js/dict.js?v=30"></script>
   <script src="js/phonics.js?v=30"></script>
   <script src="js/store.js?v=30"></script>

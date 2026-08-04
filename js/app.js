@@ -1531,9 +1531,15 @@
     var pBtn = $("#phonics-toggle");
     if (pBtn) { pBtn.classList.remove("active"); pBtn.style.display = "none"; }
 
-    bindSettings();
     initSwipe();
-    showScreen("home");
+    // 从后端加载数据（如已配置），失败时自动降级为 localStorage
+    Store.loadFromApi().then(function () {
+      bindSettings();
+      showScreen("home");
+    }).catch(function () {
+      bindSettings();
+      showScreen("home");
+    });
   }
 
   // 直接执行 init（DOMContentLoaded 可能已触发）
