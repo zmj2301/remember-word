@@ -39,11 +39,23 @@
     var audio = new Audio("audio/" + wordId + ".mp3");
     _currentAudio = audio;
     audio.playbackRate = _playbackRate;
-    audio.play();
-    // 按钮动画反馈
+    audio.play().catch(function (err) {
+      // 自动播放被拦截、文件加载失败等情况
+      console.warn("[speak] 播放失败", wordId, err);
+      _currentAudio = null;
+      var btn = $("#play-btn");
+      if (btn) { btn.classList.remove("playing"); }
+    });
     var btn = $("#play-btn");
     if (btn) { btn.classList.add("playing"); }
     audio.onended = function () {
+      _currentAudio = null;
+      if (btn) { btn.classList.remove("playing"); }
+      if (onEnd) onEnd();
+    };
+    // onerror 兜底：文件 404 等情况
+    audio.onerror = function () {
+      console.warn("[speak] 音频文件缺失", wordId);
       _currentAudio = null;
       if (btn) { btn.classList.remove("playing"); }
       if (onEnd) onEnd();
@@ -56,13 +68,23 @@
     var audio = new Audio("audio/sentence_" + wordId + ".mp3");
     _currentAudio = audio;
     audio.playbackRate = _playbackRate;
-    audio.play();
-    // 例句按钮动画反馈
-    var btn = $("#example-play-btn");
-    if (btn) { btn.classList.add("playing"); }
+    audio.play().catch(function (err) {
+      console.warn("[speakSentence] 播放失败", wordId, err);
+      _currentAudio = null;
+      var btn = $("#example-play-btn");
+      if (btn) { btn.classList.remove("playing"); }
+    });
+    var btn2 = $("#example-play-btn");
+    if (btn2) { btn2.classList.add("playing"); }
     audio.onended = function () {
       _currentAudio = null;
-      if (btn) { btn.classList.remove("playing"); }
+      if (btn2) { btn2.classList.remove("playing"); }
+      if (onEnd) onEnd();
+    };
+    audio.onerror = function () {
+      console.warn("[speakSentence] 例句音频缺失", wordId);
+      _currentAudio = null;
+      if (btn2) { btn2.classList.remove("playing"); }
       if (onEnd) onEnd();
     };
   }
@@ -144,23 +166,39 @@
   }
   window.togglePhonics = togglePhonics;
 
+  /** 清理拼读字符串：去掉括号标注、非字母分隔符（/），跳过 sb/sth 占位符 */
+  function cleanPhonicsText(phonics) {
+    // 去掉括号及括号内容，如 "(to do sth)" → ""
+    var noBracket = phonics.replace(/\([^)]*\)/g, " ")
+                            .replace(/…/g, " ")
+                            .replace(/\.\.\./g, " ");
+    var tokens = noBracket.split(' ');
+    var result = [];
+    tokens.forEach(function (token) {
+      var segments = token.split('-');
+      segments.forEach(function (seg) {
+        var s = seg.trim();
+        if (!s) return;
+        // 跳过非字母内容（/, 等纯符号）
+        if (!/[a-zA-Z]/.test(s)) return;
+        if (s.toLowerCase() === 'sb' || s.toLowerCase() === 'sth') return;
+        result.push(s);
+      });
+    });
+    return result;
+  }
+
   function renderPhonicsWord(wordObj) {
     if (!wordObj || !window.PHONICS) return wordObj ? wordObj.word : '';
     var phonics = window.PHONICS[wordObj.id];
     if (!phonics || phonics === wordObj.word) return wordObj.word;
-    var tokens = phonics.split(' ');
+    var cleaned = cleanPhonicsText(phonics);
+    if (cleaned.length === 0) return wordObj.word;
     var htmlParts = [];
-    tokens.forEach(function (token) {
-      var segments = token.split('-');
-      segments.forEach(function (seg, idx) {
-        htmlParts.push('<span class="phonics-part">' + seg + '</span>');
-        if (idx < segments.length - 1) {
-          htmlParts.push('<span class="phonics-hyphen">-</span>');
-        }
-      });
-      htmlParts.push(' ');
+    cleaned.forEach(function (seg) {
+      htmlParts.push('<span class="phonics-part">' + seg + '</span>');
     });
-    return htmlParts.join('').trim();
+    return htmlParts.join('<span class="phonics-hyphen">-</span>');
   }
 
   function speakPhonics(wordId, wordObj, onDone) {
@@ -173,14 +211,7 @@
       speak(wordId, onDone);
       return;
     }
-    var segments = [];
-    phonics.split(' ').forEach(function (token) {
-      token.split('-').forEach(function (p) {
-        if (p && p.toLowerCase() !== 'sb' && p.toLowerCase() !== 'sth') {
-          segments.push(p);
-        }
-      });
-    });
+    var segments = cleanPhonicsText(phonics);
     if (segments.length <= 1) {
       speak(wordId, onDone);
       return;
@@ -193,22 +224,28 @@
       if (segIndex < segments.length) {
         clearHL();
         if (allParts[segIndex]) allParts[segIndex].classList.add('phonics-highlight');
-        // 使用预录音频（Edge TTS，与单词音频同音色）
         var seg = segments[segIndex].toLowerCase();
         var audio = new Audio("audio/ph_" + seg + ".mp3");
         audio.playbackRate = _playbackRate;
-        audio.play();
+        audio.play().catch(function () {
+          // play 被浏览器策略拦截时降级
+          segIndex++;
+          playNextSegment();
+        });
         audio.onended = function () {
           segIndex++;
           playNextSegment();
         };
         audio.onerror = function () {
-          // 音频文件不存在时跳过
-          segIndex++;
-          playNextSegment();
+          // 段音频不存在：降级为整词播放
+          console.warn("[speakPhonics] 段音频缺失", wordId, seg);
+          if (wordEl) wordEl.classList.remove('phonics-highlight');
+          speak(wordId, function () {
+            if (onDone) onDone();
+          });
+          return;
         };
       } else {
-        // 所有段读完，播放整词音频
         clearHL();
         speak(wordId, function () {
           if (wordEl) wordEl.classList.remove('phonics-highlight');
